@@ -183,6 +183,10 @@ charged and tunes itself from then on.
 ## For tinkerers
 
 - **Build a clean upload ZIP:** `python build.py` → `dist/textaloud-v<version>.zip`
+- **Publishing?** ready-to-paste store copy + a checklist live in
+  [`store/listing.md`](store/listing.md), with a promo tile and marquee in
+  `store/`.
+- **Changes:** see [CHANGELOG.md](CHANGELOG.md).
 - **Files:** `manifest.json`, `background.js`, `content.js`, `offscreen.*`,
   `popup.*`, `options.*`, `filestore.js`, `icons/`.
 - **License:** [GPL-3.0-or-later](LICENSE).
