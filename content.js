@@ -479,7 +479,12 @@
     renderMeta();
 
     const res = await send({ type: "estimate", text });
-    if (token !== estimateToken || res?.ok !== true || !res.estimate) return;
+    if (token !== estimateToken) return;
+    if (res?.ok !== true || !res.estimate) {
+      lastEstimateText = "";
+      if (state === "idle") renderMeta();
+      return;
+    }
 
     const e = res.estimate;
     if (e.cached) {

@@ -1,106 +1,190 @@
-# TextAloud — OpenRouter TTS
+# 🔊 TextAloud
 
-Highlight text on any page and have it read aloud by a text-to-speech model from
-[OpenRouter](https://openrouter.ai), with a **price estimate shown before you
-click**. Chrome extension, Manifest V3.
+Highlight some text, click a button, and hear it read aloud — using a
+text-to-speech voice from [OpenRouter](https://openrouter.ai). It even shows the
+price before you commit. A Chrome extension (Manifest V3).
 
-## Install (unpacked)
+---
+
+## What it does
+
+- 🔦 **Highlight text → it appears** a little card with a **Read aloud** button.
+- 💸 **See the cost first** — like `≈ $0.0003 · 84 chars` — before you click.
+- 🗣️ **You pick the voice** — 35+ models, each with its own voice list.
+- ⏯️ **Full control** — pause, stop, or cancel while it's still generating.
+- 🖱️ **Drag the card** wherever you like; it remembers where you put it.
+- 💾 **Save the audio** (optional) to a folder you choose.
+
+---
+
+## Install (about a minute)
 
 1. Open `chrome://extensions` in Chrome.
-2. Turn on **Developer mode** (top-right).
-3. Click **Load unpacked** and select this folder (`C:\Users\caleb\TextAloud`).
-4. Click the TextAloud toolbar icon, paste your OpenRouter API key
-   ([create one](https://openrouter.ai/keys)), and press **Save & connect**.
-5. Pick a model and voice in the popup.
+2. Flip on **Developer mode** (top-right).
+3. Click **Load unpacked** and pick this folder.
+4. Click the TextAloud icon in the toolbar, paste your OpenRouter API key
+   ([get one here](https://openrouter.ai/keys)), and hit **Save & connect**.
 
-## Use
+That's it. Now highlight some text on any page.
 
-- **Highlight text** on any page. A small bubble appears with:
-  `🔊 Read aloud` and `≈ $0.0021 · 412 chars`.
-- Click **Read aloud**. Playback controls (pause / stop) replace the button while
-  it plays; while audio is still generating the **✕** button cancels the request.
-- **Drag the bubble** anywhere on it that isn’t a button to reposition it. The
-  position is remembered across selections, tabs, and pages; **double-click** the
-  card to reset it back to following your selection.
-- You can also **right-click** a selection → **Read aloud with TextAloud**.
-- Turn on **Save generated audio files** in the popup to write each clip to a
-  folder you choose. Folder selection happens on a dedicated options tab (popups
-  close when a native dialog opens). After that, every generated clip is saved
-  there as `textaloud-<timestamp>.mp3` (or `.wav` for PCM-only models). The
-  bubble confirms each save. Folder access is verified proactively each browser
-  session; if Chrome needs it re-confirmed, a **Re-grant folder access** button
-  appears (in the bubble, popup, and options tab). Re-granting is a single click
-  that re-authorizes the existing folder without re-picking it — browsers forbid
-  doing that silently, so a user gesture is always required.
-- After each request the real cost is fetched from OpenRouter and used to
-  calibrate future estimates for that model.
+> Using it just for yourself is totally fine — no store needed. You'll only see a
+> minor "developer mode" nudge from Chrome now and then.
 
-## How it works
+---
+
+## Using it
+
+1. Select some text on a page.
+2. A small card pops up near your selection.
+3. Click **🔊 Read aloud**. That's it.
+
+**On the card:**
+
+| Button | What it does |
+| --- | --- |
+| **🔊 Read aloud** | Start reading the highlighted text |
+| **⏸ / ▶** | Pause and resume |
+| **⏹** | Stop playback |
+| **✕** | Cancel while it's still generating |
+| **🔑 Re-grant folder access** | Only shows up if saving files needs a quick re-confirm |
+
+**Handy bits:**
+- **Drag the card** by grabbing anywhere that isn't a button. It stays put across
+  selections, tabs, and restarts.
+- **Double-click** the card to snap it back to following your selection.
+- **Right-click** any selected text → **Read aloud with TextAloud**.
+
+Selections are capped at **3,000 characters** per read, to keep every provider
+happy.
+
+---
+
+## Choosing a voice
+
+Open the toolbar popup (click the extension icon):
+
+- The **Model** menu lists every text-to-speech model **with its price** next to
+  it. The default is **Google Gemini 3.8 Flash Lite TTS**.
+- The **Voice** menu fills up with that model's voices. Change the model and the
+  voice list changes with it.
+
+### "Can I pick a specific gender / accent?"
+
+Sort of — it depends on the model, because each provider names its voices
+differently. Some make it obvious:
+
+| Model | Example voices | What you can tell |
+| --- | --- | --- |
+| Microsoft MAI-Voice | `en-US-Harper`, `de-DE-Klaus` | language + name |
+| Deepgram Aura-2 | `aura-2-thalia-en`, `aura-2-agathe-fr` | name + language |
+| Kokoro 82M | `af_heart`, `am_adam`, `bf_emma` | a/b = US/UK, f/m = female/male |
+| MiniMax | `English_calm_woman`, `English_mature_boss` | style + gender |
+| ElevenLabs v4 | `george`, `sarah`, `bella` | named voices |
+
+So for a specific accent or gender, a multi-language model like **MAI-Voice** or
+**Aura-2** gives you the most control. Use **🔊 Test voice** to hear a sample
+before settling.
+
+**Two more dials:**
+- **Delivery instructions** — nudge the tone, e.g. *"warm and friendly"* or
+  *"slow and calm"* (works on Gemini, OpenAI audio, and Fish Audio models).
+- **Speed** — anywhere from **0.25× to 5×**. If a model doesn't support custom
+  speed, TextAloud quietly retries without it and remembers for next time.
+
+---
+
+## Saving the audio (optional)
+
+Turn on **Save generated audio files** in the popup. A settings tab opens so you
+can pick a folder — it uses your operating system's normal folder dialog.
+
+From then on, every clip you generate is saved there as:
 
 ```
-content.js   selection detection + floating bubble (Shadow DOM)
-             └─ sends {type:"estimate"} and {type:"speak"} to background
-background.js  holds the API key; fetches models, estimates cost,
-             calls /api/v1/audio/speech, reconciles actual cost,
-             relays playback state back to the tab
-offscreen.js   plays the returned mp3 in an extension page (no page CSP issues)
-popup.js       API key setup, model/voice picker, settings
+textaloud-20261018-143022-a9f3.mp3     (or .wav for PCM-only models)
 ```
 
-### API calls used
+- The card shows **💾 Saved …** when it lands.
+- Already-generated text doesn't get saved twice.
+- Folder access is checked each browser session. If Chrome ever needs you to
+  re-confirm it, a **Re-grant folder access** button appears (in the card, the
+  popup, and the settings tab). It's a **one click** fix — you don't re-pick the
+  folder.
+- **Forget** clears the folder and turns saving off.
 
-- `GET  /api/v1/models?output_modalities=speech` — lists TTS models with their
-  `supported_voices` and pricing.
-- `POST /api/v1/audio/speech` — `{ model, input, voice, response_format:"mp3" }`,
-  returns a raw audio byte stream plus an `X-Generation-Id` header.
-- `GET  /api/v1/generation?id=…` — the actual `total_cost`, used to self-tune
-  the estimator.
-- `GET  /api/v1/credits` — remaining credit shown in the popup.
+> Why the settings *tab* and not the popup? A native file dialog steals focus,
+> and Chrome closes extension popups the moment they lose focus. A tab stays
+> open, so the picker works.
 
-### Pricing model
+---
 
-- Most TTS models price `pricing.prompt` **per character** →
-  `estimate = chars × prompt` (exact).
-- Gemini-style models price per **token** (text in + audio out); Seed-style
-  price per **second**. Those are estimated from heuristics on first use, then
-  replaced by the calibrated real rate.
+## What gets stored (the short version)
 
-### Output format
-
-Some models (notably Gemini TTS) reject `mp3` and only return raw `pcm`. The
-worker tries `mp3` first, automatically retries with `pcm` on a format error,
-and remembers the working format per model in `chrome.storage` (the offscreen
-player wraps PCM in a WAV container so it plays through a normal `<audio>`).
-
-## Notes & limitations
-
-- Selections are limited to **3000 characters** per read (safe across providers).
-- Speed is adjustable from **0.25× to 5×**. Models that don’t support custom
-  speed are detected automatically: the request is retried without it and the
-  model is remembered as speed-less.
-- Content scripts run in the top frame only (not inside iframes).
-- Generated audio is **never written to disk** unless you enable **Save
-  generated audio files**; otherwise it lives in an in-memory cache (max 25
-  clips) and a transient Blob during playback.
-- When saving is enabled, audio is written only to the folder you pick, using
-  the browser’s File System Access API. The extension cannot see or write
-  anywhere else.
-- The audio cache is in-memory and lasts while the service worker is alive.
-- Your API key is stored in `chrome.storage.local` and only ever sent to
+- 🔑 Your OpenRouter **API key** lives in the extension's own storage
+  (`chrome.storage.local`), which websites can't read. It's only ever sent to
   `openrouter.ai`.
+- ⚙️ Your settings (model, voice, speed, toggles) are stored the same way.
+- 🎧 **Audio is not saved anywhere** unless you turn on saving — otherwise it
+  sits in a small in-memory cache (25 clips max) and disappears.
+- 📁 When saving is on, files go **only** to the folder you picked.
+
+No accounts, no servers, no tracking. See [PRIVACY.md](PRIVACY.md) for the full
+story.
+
+---
+
+## How it works (the simple version)
+
+```
+You highlight text
+      │
+      ▼
+content.js   → the little card (Read / pause / stop, price estimate)
+      │
+      ▼
+background.js → talks to OpenRouter, holds your key, works out the price
+      │
+      ▼
+offscreen.js  → actually plays the sound
+      │
+      ▼
+popup.js      → your settings (model, voice, save, etc.)
+```
+
+**What it asks OpenRouter for:**
+- the list of speech models (with voices and prices),
+- the speech itself (`POST /audio/speech`, returns an audio clip),
+- the real cost afterwards, so future estimates get more accurate.
+
+**About the price estimate:** most models charge **per character**, so the
+estimate is exact. A few (like Gemini) charge per *token*, and some per *second* —
+those start as a rough guess, then TextAloud checks what you were *actually*
+charged and tunes itself from then on.
+
+---
 
 ## Troubleshooting
 
-- **Nothing happens on highlight** — confirm the extension is enabled, reload the
-  page (content scripts load at page load), and check the “floating button”
-  toggle in the popup.
-- **“No API key”** — open the popup and add one.
-- **Request failed (HTTP 4xx)** — the error text from OpenRouter is shown in the
-  bubble (e.g. a voice that the chosen model doesn’t support). Models that only
-  support `pcm` are handled automatically.
-- **Stuck on “Generating audio…”** — the worker now waits for the offscreen
-  player to be ready and reports an error after 15s instead of hanging. If it
-  persists, reload the extension in `chrome://extensions` (the service worker
-  also restarts) and try again.
-- **No sound** — check the system volume; offscreen playback is used so page
-  restrictions don’t apply.
+- **Nothing appears when I highlight** — is the extension enabled? Reload the
+  page (content scripts load at page load). Check the "floating button" toggle.
+- **"No API key"** — open the popup and add one.
+- **A red error on the card** — that's the real message from OpenRouter (a voice
+  the model doesn't support, a rate limit, etc.).
+- **Stuck on "Generating audio…"** — reload the extension in `chrome://extensions`
+  and try again. It also gives up with an error after 15 seconds rather than
+  hanging forever.
+- **The voice menu is missing** — some models have no preset voices (they use the
+  provider's default, or support voice cloning). You'll get a text box instead.
+- **No sound** — check your system volume. Audio plays in the extension itself,
+  so page restrictions don't get in the way.
+
+---
+
+## For tinkerers
+
+- **Build a clean upload ZIP:** `python build.py` → `dist/textaloud-v<version>.zip`
+- **Files:** `manifest.json`, `background.js`, `content.js`, `offscreen.*`,
+  `popup.*`, `options.*`, `filestore.js`, `icons/`.
+- **License:** [GPL-3.0-or-later](LICENSE).
+
+Contributions and ideas welcome. Happy listening! 🎧

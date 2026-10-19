@@ -37,7 +37,7 @@ const AUDIO_TOKENS_PER_SECOND = 25; // used for Gemini-style token pricing
 const audioCache = new Map();
 const MAX_CACHE_ENTRIES = 25;
 
-let current = null; // { key, tabId, startedAt }
+let current = null; // { key, tabId, startedAt, controller }
 let offscreenPromise = null;
 
 /* ------------------------------------------------------------------ */
@@ -486,7 +486,7 @@ async function speak(text, tabId, opts = {}) {
     });
     startPlaybackWatchdog(tabId);
 
-    if (settings.saveAudio && !entry.saved) {
+    if (settings.saveAudio && !entry.saved && opts.save !== false) {
       await saveAudioFile(entry, tabId);
     }
 
@@ -709,7 +709,7 @@ async function handleMessage(msg, sender) {
     }
 
     case "preview": {
-      return speak(msg.text || "Hello! This is TextAloud.", null);
+      return speak(msg.text || "Hello! This is TextAloud.", null, { save: false });
     }
 
     case "control": {

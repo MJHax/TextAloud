@@ -24,18 +24,6 @@ function toast(text, kind) {
   }
 }
 
-function fmtMoney(v) {
-  if (typeof v !== "number" || !isFinite(v)) return "—";
-  if (v === 0) return "$0.00";
-  if (v < 0.0001) return "$" + v.toExponential(2);
-  if (v < 1) return "$" + v.toFixed(4);
-  return "$" + v.toFixed(2);
-}
-
-/* ---------------------------------------------------------------- */
-/* Rendering                                                         */
-/* ---------------------------------------------------------------- */
-
 function showSetup() {
   $("setup").hidden = false;
   $("main").hidden = true;
@@ -327,7 +315,8 @@ function onSaveAudioChange() {
 
 async function onForgetFolder() {
   if (self.TextAloudFiles) await self.TextAloudFiles.clearDir();
-  await persist({ saveFolderName: "" });
+  await persist({ saveAudio: false, saveFolderName: "" });
+  $("saveAudio").checked = false;
   await renderSaveFolder();
   toast("Save folder forgotten.", "ok");
 }

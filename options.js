@@ -94,7 +94,7 @@ function chooseFolder() {
 
 async function forgetFolder() {
   if (self.TextAloudFiles) await self.TextAloudFiles.clearDir();
-  await chrome.storage.local.set({ saveFolderName: "" });
+  await chrome.storage.local.set({ saveAudio: false, saveFolderName: "" });
   await render();
   toast("Save folder forgotten.");
 }
