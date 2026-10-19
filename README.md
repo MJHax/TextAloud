@@ -222,7 +222,7 @@ with what you were actually charged and adjusts future estimates.
   `dist/textaloud-v<version>.zip`, which contains only the files Chrome needs
   plus `LICENSE` and `NOTICE`.
 - **Store listing:** copy, permission justifications, and a checklist are in
-  [`store/listing.md`](store/listing.md). Promo images are in `store/`.
+  [`store/listing.md`](store/listing.md). Promo tiles and screenshots are in [`assets/`](assets).
 - **Changes:** see [CHANGELOG.md](CHANGELOG.md).
 - **Layout:** `manifest.json`, `background.js`, `content.js`, `offscreen.*`,
   `popup.*`, `options.*`, `filestore.js`, `icons/`.

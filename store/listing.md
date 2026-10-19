@@ -81,9 +81,9 @@ billed by OpenRouter per your chosen model — often well under a cent per read.
 
 - [ ] `python build.py` → upload `dist/textaloud-v1.0.0.zip`
 - [ ] Store icon (128×128) — `icons/icon128.png`
-- [ ] Small promo tile (440×280) — `store/promo-440x280.png`
-- [ ] Marquee (1400×560, optional) — `store/marquee-1400x560.png`
-- [ ] At least one screenshot (see above)
+- [ ] Small promo tile (440×280) — `assets/promo-440x280.png`
+- [ ] Marquee (1400×560, optional) — `assets/marquee-1400x560.png`
+- [ ] Screenshots (1280×800) — `assets/screenshots/`
 - [ ] Privacy policy URL set
 - [ ] Permission justifications filled in
 - [ ] Data usage questionnaire answered
