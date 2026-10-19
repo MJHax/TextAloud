@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TextAloud — Save folder</title>
+    <style>
+      :root {
+        --bg: #0b1120;
+        --panel: #111c33;
+        --line: #1e2c47;
+        --text: #e6ecf7;
+        --muted: #93a3bd;
+        --accent1: #7c3aed;
+        --accent2: #2563eb;
+        --danger: #f87171;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+      }
+      main { max-width: 560px; margin: 0 auto; padding: 40px 24px; }
+      h1 { font-size: 20px; margin: 0 0 8px; }
+      .lead { color: var(--muted); margin: 0 0 24px; }
+      .folder {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .actions { display: flex; gap: 10px; }
+      button {
+        font: inherit; font-weight: 600; color: #fff; border: 0;
+        border-radius: 9px; padding: 10px 14px; cursor: pointer;
+      }
+      button.primary { background: linear-gradient(135deg, var(--accent1), var(--accent2)); }
+      button.ghost { background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px var(--line); color: var(--text); }
+      button:hover { filter: brightness(1.08); }
+      .note { color: var(--muted); font-size: 12px; margin-top: 20px; line-height: 1.5; }
+      .toast { margin-top: 16px; font-size: 13px; color: #86efac; }
+      .toast.error { color: var(--danger); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>💾 Save generated audio</h1>
+      <p class="lead">
+        Choose a folder where TextAloud should save each spoken clip. The folder
+        picker is your operating system’s own dialog.
+      </p>
+
+      <div class="folder" id="folder">No folder selected</div>
+
+      <div class="actions">
+        <button id="choose" class="primary">Choose folder…</button>
+        <button id="forget" class="ghost" hidden>Forget</button>
+      </div>
+
+      <p id="toast" class="toast" hidden></p>
+
+      <p class="note">
+        Files are written as <code>textaloud-&lt;timestamp&gt;.mp3</code>, or
+        <code>.wav</code> for models that only produce PCM. You can keep this tab
+        open while the dialog is showing. Turn saving off any time in the popup.
+      </p>
+    </main>
+
+    <script src="filestore.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>

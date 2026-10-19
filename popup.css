@@ -126,6 +126,22 @@ button:disabled { opacity: .55; cursor: default; }
 .fine { margin: 12px 0 0; font-size: 11px; color: var(--muted); }
 .field-note { margin: 6px 0 0; font-size: 11px; color: var(--muted); }
 
+.savefolder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.savefolder span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.savefolder button { padding: 5px 9px; font-size: 11.5px; }
+
 .toast {
   margin: 0 16px 14px;
   padding: 9px 11px;

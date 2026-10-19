@@ -16,13 +16,15 @@ const CREDITS_URL = "https://openrouter.ai/api/v1/credits";
 
 const DEFAULTS = {
   apiKey: "",
-  model: "google/gemini-3.8-flash-tts",
+  model: "google/gemini-3.8-flash-lite-tts",
   voice: "Kore",
   instructions: "",
   speed: 1,
   showEstimate: true,
   showButton: true,
   contextMenu: true,
+  saveAudio: false,
+  saveFolderName: "",
 };
 
 // Rough heuristics used only for the pre-flight estimate on models that are not
@@ -42,7 +44,27 @@ let offscreenPromise = null;
 /* Settings                                                            */
 /* ------------------------------------------------------------------ */
 
+let migrationPromise = null;
+
+function ensureMigrated() {
+  if (!migrationPromise) {
+    migrationPromise = (async () => {
+      const { schemaVersion } = await chrome.storage.local.get("schemaVersion");
+      if (schemaVersion >= 2) return;
+      const { model } = await chrome.storage.local.get("model");
+      const patch = { schemaVersion: 2 };
+      // Move installs that still hold the previous default onto the new default.
+      if (model === "google/gemini-3.8-flash-tts") {
+        patch.model = "google/gemini-3.8-flash-lite-tts";
+      }
+      await chrome.storage.local.set(patch);
+    })().catch(() => {});
+  }
+  return migrationPromise;
+}
+
 async function getSettings() {
+  await ensureMigrated();
   const s = await chrome.storage.local.get(DEFAULTS);
   return { ...DEFAULTS, ...s };
 }
@@ -461,6 +483,11 @@ async function speak(text, tabId, opts = {}) {
       kind: entry.kind,
     });
     startPlaybackWatchdog(tabId);
+
+    if (settings.saveAudio && !entry.saved) {
+      await saveAudioFile(entry, tabId);
+    }
+
     return { ok: true, cached: fromCache };
   } catch (err) {
     const message = err?.message || String(err);
@@ -538,6 +565,45 @@ function arrayBufferToBase64(buffer) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function makeFilename(kind) {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const stamp =
+    `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}` +
+    `-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  const rand = Math.random().toString(36).slice(2, 6);
+  const ext = kind === "pcm" ? "wav" : "mp3";
+  return `textaloud-${stamp}-${rand}.${ext}`;
+}
+
+async function saveAudioFile(entry, tabId) {
+  const filename = makeFilename(entry.kind);
+  try {
+    const res = await offscreen({
+      type: "save",
+      b64: entry.b64,
+      kind: entry.kind,
+      filename,
+    });
+    if (res?.ok) {
+      entry.saved = true;
+      notify(tabId, { type: "saveStatus", ok: true, name: res.name || filename });
+    } else {
+      notify(tabId, {
+        type: "saveStatus",
+        ok: false,
+        error: res?.error || "Save failed.",
+      });
+    }
+  } catch (e) {
+    notify(tabId, {
+      type: "saveStatus",
+      ok: false,
+      error: e?.message || "Save failed.",
+    });
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Message routing                                                     */

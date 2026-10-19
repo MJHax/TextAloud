@@ -45,6 +45,16 @@ tracking. OpenRouter's handling of your request is governed by
 Open the extension popup and enter a different key, or remove the extension
 from `chrome://extensions`. That deletes all locally stored data.
 
+## Saved audio files (optional)
+
+If you turn on **Save generated audio files**, the extension writes each
+synthesized clip into a folder you explicitly choose with your operating
+system's folder picker. The folder handle is remembered in the extension's
+owner IndexedDB storage. These audio files are yours and remain on your disk
+until you delete them; the developer has no access to them. Turning the option
+off (or clicking **Forget**) stops writing new files and removes the stored
+folder reference.
+
 ## Contact
 
 Questions or concerns: open an issue on the project's repository.

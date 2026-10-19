@@ -20,6 +20,10 @@ click**. Chrome extension, Manifest V3.
 - Click **Read aloud**. Playback controls (pause / stop) replace the button while
   it plays.
 - You can also **right-click** a selection → **Read aloud with TextAloud**.
+- Turn on **Save generated audio files** in the popup to write each clip to a
+  folder you choose. A native folder picker opens once; after that, every
+  generated clip is saved there as `textaloud-<timestamp>.mp3` (or `.wav` for
+  PCM-only models). The bubble confirms each save.
 - After each request the real cost is fetched from OpenRouter and used to
   calibrate future estimates for that model.
 
@@ -67,8 +71,12 @@ player wraps PCM in a WAV container so it plays through a normal `<audio>`).
   speed are detected automatically: the request is retried without it and the
   model is remembered as speed-less.
 - Content scripts run in the top frame only (not inside iframes).
-- Generated audio is **never written to disk** — it lives in an in-memory cache
-  (max 25 clips) and a transient Blob during playback.
+- Generated audio is **never written to disk** unless you enable **Save
+  generated audio files**; otherwise it lives in an in-memory cache (max 25
+  clips) and a transient Blob during playback.
+- When saving is enabled, audio is written only to the folder you pick, using
+  the browser’s File System Access API. The extension cannot see or write
+  anywhere else.
 - The audio cache is in-memory and lasts while the service worker is alive.
 - Your API key is stored in `chrome.storage.local` and only ever sent to
   `openrouter.ai`.

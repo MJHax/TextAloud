@@ -110,6 +110,37 @@ function control(action) {
   }
 }
 
+async function save(b64, kind, filename) {
+  try {
+    const dir = await self.TextAloudFiles.getDir();
+    if (!dir) {
+      return { ok: false, error: "No save folder selected — choose one in the popup." };
+    }
+
+    if (dir.queryPermission) {
+      const perm = await dir.queryPermission({ mode: "readwrite" });
+      if (perm !== "granted") {
+        return {
+          ok: false,
+          error: "Save folder permission was lost — re-select it in the popup.",
+        };
+      }
+    }
+
+    const bytes = base64ToBytes(b64);
+    const blob =
+      kind === "pcm" ? pcmToWav(bytes) : new Blob([bytes], { type: "audio/mpeg" });
+
+    const fileHandle = await dir.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return { ok: true, name: filename };
+  } catch (e) {
+    return { ok: false, error: e?.message || "Save failed." };
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || msg.target !== "offscreen") return;
   if (msg.type === "play") {
@@ -118,6 +149,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   } else if (msg.type === "control") {
     control(msg.action);
     sendResponse({ ok: true });
+  } else if (msg.type === "save") {
+    save(msg.b64, msg.kind, msg.filename).then(sendResponse);
+    return true;
   } else if (msg.type === "ping") {
     sendResponse({ ok: true });
   }

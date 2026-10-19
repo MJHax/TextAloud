@@ -215,6 +215,9 @@ function bind() {
   $("contextMenu").addEventListener("change", () =>
     persist({ contextMenu: $("contextMenu").checked })
   );
+  $("saveAudio").addEventListener("change", onSaveAudioChange);
+  $("chooseFolder").addEventListener("click", chooseFolder);
+  $("forgetFolder").addEventListener("click", onForgetFolder);
   $("preview").addEventListener("click", onPreview);
   $("refresh").addEventListener("click", onRefresh);
   $("changeKey").addEventListener("click", (e) => {
@@ -282,6 +285,51 @@ async function onPreview() {
 /* Init                                                              */
 /* ---------------------------------------------------------------- */
 
+async function renderSaveFolder() {
+  const files = self.TextAloudFiles;
+  const dir = files ? await files.getDir() : null;
+  $("saveFolderRow").hidden = !settings.saveAudio;
+  $("saveFolderName").textContent = dir ? `📁 ${dir.name}` : "No folder selected yet";
+  $("forgetFolder").hidden = !dir;
+}
+
+function chooseFolder() {
+  // A native folder dialog steals focus, which closes an extension popup and
+  // cancels the picker — so folder selection lives in the options tab.
+  chrome.runtime.openOptionsPage();
+}
+
+function onSaveAudioChange() {
+  const on = $("saveAudio").checked;
+  persist({ saveAudio: on });
+  if (on && !settings.saveFolderName) {
+    chooseFolder();
+  } else {
+    renderSaveFolder();
+  }
+}
+
+async function onForgetFolder() {
+  if (self.TextAloudFiles) await self.TextAloudFiles.clearDir();
+  await persist({ saveFolderName: "" });
+  await renderSaveFolder();
+  toast("Save folder forgotten.", "ok");
+}
+
+function renderForm() {
+  $("instructions").value = settings.instructions || "";
+  $("speed").value = settings.speed ?? 1;
+  $("speedVal").textContent = `${Number(settings.speed ?? 1).toFixed(2)}×`;
+  $("showEstimate").checked = settings.showEstimate !== false;
+  $("showButton").checked = settings.showButton !== false;
+  $("contextMenu").checked = settings.contextMenu !== false;
+  $("saveAudio").checked = !!settings.saveAudio;
+  populateModels();
+  populateVoices();
+  renderPrice();
+  renderSaveFolder();
+}
+
 async function loadModelsAndRender() {
   const res = await send({ type: "getState" });
   if (res?.ok) {
@@ -289,10 +337,7 @@ async function loadModelsAndRender() {
     models = res.models || [];
     if (res.modelsError) toast(`Model list failed: ${res.modelsError}`, "error");
   }
-  $("model").value = settings.model;
-  populateModels();
-  populateVoices();
-  renderPrice();
+  renderForm();
 }
 
 async function init() {
@@ -309,16 +354,7 @@ async function init() {
   }
 
   showMain();
-  $("instructions").value = settings.instructions || "";
-  $("speed").value = settings.speed ?? 1;
-  $("speedVal").textContent = `${Number(settings.speed ?? 1).toFixed(2)}×`;
-  $("showEstimate").checked = settings.showEstimate !== false;
-  $("showButton").checked = settings.showButton !== false;
-  $("contextMenu").checked = settings.contextMenu !== false;
-
-  populateModels();
-  populateVoices();
-  renderPrice();
+  renderForm();
   renderCredits();
 }
 

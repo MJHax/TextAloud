@@ -67,6 +67,13 @@
         <label><input type="checkbox" id="showEstimate" /> Show price estimate on highlight</label>
         <label><input type="checkbox" id="showButton" /> Show floating button on highlight</label>
         <label><input type="checkbox" id="contextMenu" /> Add right-click “Read aloud” menu</label>
+        <label><input type="checkbox" id="saveAudio" /> Save generated audio files</label>
+      </div>
+
+      <div class="savefolder" id="saveFolderRow" hidden>
+        <span id="saveFolderName">No folder selected</span>
+        <button id="chooseFolder" class="ghost">Choose…</button>
+        <button id="forgetFolder" class="ghost">Forget</button>
       </div>
 
       <div class="actions">
@@ -81,6 +88,7 @@
 
     <div id="toast" class="toast" hidden></div>
 
+    <script src="filestore.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

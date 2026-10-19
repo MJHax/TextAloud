@@ -17,6 +17,7 @@
   let shadow = null;
   let bubble = null;
   let estimateEl = null;
+  let toastEl = null;
   let readBtn = null;
   let pauseBtn = null;
   let stopBtn = null;
@@ -146,6 +147,8 @@
         letter-spacing: .05em;
         color: #94a3b8;
       }
+      .toast { font-size: 11.5px; color: #86efac; }
+      .toast.error { color: #fca5a5; }
     `;
     shadow.appendChild(style);
 
@@ -161,12 +164,14 @@
         <button class="ghost icon stop" hidden title="Stop"></button>
       </div>
       <div class="meta"></div>
+      <div class="toast" hidden></div>
     `;
 
     readBtn = bubble.querySelector(".read");
     pauseBtn = bubble.querySelector(".pause");
     stopBtn = bubble.querySelector(".stop");
     estimateEl = bubble.querySelector(".meta");
+    toastEl = bubble.querySelector(".toast");
 
     readBtn.addEventListener("mousedown", (e) => e.preventDefault());
     readBtn.addEventListener("click", onReadClick);
@@ -222,6 +227,19 @@
   }
 
   let lastEstimateText = "";
+  let toastTimer = null;
+
+  function showToast(text, isError) {
+    if (!toastEl) return;
+    toastEl.textContent = text;
+    toastEl.classList.toggle("error", !!isError);
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toastEl.hidden = true;
+    }, 5000);
+    requestAnimationFrame(positionBubble);
+  }
 
   function fmtCost(cost) {
     if (typeof cost !== "number" || !isFinite(cost)) return "$?";
@@ -367,6 +385,13 @@
       if (playbackState === "playing" || playbackState === "paused") {
         showBubble(lastRect || { left: 40, top: 40, width: 0, height: 0, bottom: 40 });
       }
+      return;
+    }
+
+    if (msg.type === "saveStatus") {
+      if (settings.showButton === false) return;
+      if (msg.ok) showToast(`💾 Saved ${msg.name}`);
+      else showToast(`⚠ ${msg.error}`, true);
       return;
     }
 
