@@ -24,7 +24,10 @@ When you ask TextAloud to read a selection, the extension sends the following
 
 - the selected text,
 - your chosen model and voice (and optional instructions / speed),
-- your API key, in the `Authorization` header.
+- your API key, in the `Authorization` header,
+- app attribution headers (`HTTP-Referer`, `X-OpenRouter-Title`,
+  `X-Title`, `X-OpenRouter-Categories`) that identify the request as coming
+  from TextAloud. These are fixed values and contain no information about you.
 
 No other data leaves your device. The developer operates **no server** and
 receives **no data** from the extension. There is no analytics, telemetry, or

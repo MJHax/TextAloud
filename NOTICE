@@ -1,0 +1,28 @@
+TextAloud
+Copyright (C) 2026 Caleb McDougall
+https://github.com/MJHax/TextAloud
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program (see the LICENSE file). If not, see <https://www.gnu.org/licenses/>.
+
+-------------------------------------------------------------------------------
+Name and branding
+-------------------------------------------------------------------------------
+
+The GPL covers the source code. It does not grant any rights to the
+"TextAloud" name, logo, or icons, or to the Chrome Web Store listing assets in
+store/. Forks and redistributed versions are welcome, but they must use a
+different name and icon, and must not suggest that they are the official
+TextAloud extension or endorsed by its author.
+
+"OpenRouter" is a trademark of its respective owner. TextAloud is an
+independent project and is not affiliated with or endorsed by OpenRouter.

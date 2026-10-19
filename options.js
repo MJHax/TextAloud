@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Caleb McDougall
+
 /** TextAloud — options page: choose the folder to save generated audio into. */
 
 const $ = (id) => document.getElementById(id);

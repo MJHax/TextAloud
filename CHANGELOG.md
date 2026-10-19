@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Send OpenRouter app attribution headers so usage is credited to TextAloud.
+- Add NOTICE covering name and branding, and SPDX license headers.
+
 ## 1.0.0
 
 First release.

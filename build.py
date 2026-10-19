@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Caleb McDougall
 """Build a clean, upload-ready ZIP of the extension.
 
 Usage:
@@ -33,6 +35,9 @@ INCLUDE = [
     "popup.html",
     "popup.js",
     "popup.css",
+    "icons",
+    "LICENSE",
+    "NOTICE",
 ]
 
 

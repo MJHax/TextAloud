@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Caleb McDougall
+
 /**
  * TextAloud — background service worker (Manifest V3, ES module)
  *
@@ -13,6 +16,16 @@ const SPEECH_URL = "https://openrouter.ai/api/v1/audio/speech";
 const MODELS_URL = "https://openrouter.ai/api/v1/models?output_modalities=speech";
 const GENERATION_URL = "https://openrouter.ai/api/v1/generation";
 const CREDITS_URL = "https://openrouter.ai/api/v1/credits";
+
+// OpenRouter App Attribution (https://openrouter.ai/docs/app-attribution).
+// Identifies TextAloud as the calling app so usage is credited to it in
+// OpenRouter's rankings and analytics. Contains no user data.
+const ATTRIBUTION_HEADERS = {
+  "HTTP-Referer": "https://github.com/MJHax/TextAloud",
+  "X-OpenRouter-Title": "TextAloud",
+  "X-Title": "TextAloud", // legacy name, kept for backwards compatibility
+  "X-OpenRouter-Categories": "audio-gen",
+};
 
 const DEFAULTS = {
   apiKey: "",
@@ -38,7 +51,7 @@ const audioCache = new Map();
 const MAX_CACHE_ENTRIES = 25;
 
 let current = null; // { key, tabId, startedAt, controller }
-let offscreenPromise = null;
+let offscreenCreating = null;
 
 /* ------------------------------------------------------------------ */
 /* Settings                                                            */
@@ -101,7 +114,9 @@ function normalizeModel(m) {
 }
 
 async function fetchModels() {
-  const res = await fetch(MODELS_URL, { headers: { Accept: "application/json" } });
+  const res = await fetch(MODELS_URL, {
+    headers: { ...ATTRIBUTION_HEADERS, Accept: "application/json" },
+  });
   if (!res.ok) throw new Error(`Could not load models (HTTP ${res.status})`);
   const json = await res.json();
   const models = (json.data || []).map(normalizeModel);
@@ -225,7 +240,7 @@ async function reconcileActualCost(genId, key, chars, modelId, tabId) {
     try {
       const res = await fetch(
         `${GENERATION_URL}?id=${encodeURIComponent(genId)}`,
-        { headers: { Authorization: `Bearer ${apiKey}` } }
+        { headers: { ...ATTRIBUTION_HEADERS, Authorization: `Bearer ${apiKey}` } }
       );
       if (!res.ok) continue;
       const json = await res.json();
@@ -275,22 +290,34 @@ async function hasOffscreen() {
   return false;
 }
 
-function ensureOffscreen() {
-  if (!offscreenPromise) {
-    offscreenPromise = (async () => {
-      if (await hasOffscreen()) return true;
-      await chrome.offscreen.createDocument({
-        url: "offscreen.html",
-        reasons: ["AUDIO_PLAYBACK"],
-        justification: "Play synthesized text-to-speech audio.",
-      });
-      return true;
-    })().catch((err) => {
-      offscreenPromise = null;
+function createOffscreen() {
+  return chrome.offscreen
+    .createDocument({
+      url: "offscreen.html",
+      reasons: ["AUDIO_PLAYBACK"],
+      justification: "Play synthesized text-to-speech audio.",
+    })
+    .catch(async (err) => {
+      // Another call may have created the document between our existence
+      // check and the create call; treat that race as success.
+      if (await hasOffscreen()) return;
       throw err;
     });
+}
+
+// Always revalidate that the offscreen document is still alive. Chrome closes
+// idle AUDIO_PLAYBACK documents (and they can crash), so a previously created
+// document is not a guarantee that one exists now. Only an in-flight creation
+// is shared, to avoid two concurrent createDocument() calls.
+async function ensureOffscreen() {
+  if (await hasOffscreen()) return true;
+  if (!offscreenCreating) {
+    offscreenCreating = createOffscreen().finally(() => {
+      offscreenCreating = null;
+    });
   }
-  return offscreenPromise;
+  await offscreenCreating;
+  return true;
 }
 
 async function waitForOffscreen(timeoutMs = 5000) {
@@ -372,9 +399,9 @@ async function requestSpeech(settings, text, format, useSpeed = true, signal) {
   const res = await fetch(SPEECH_URL, {
     method: "POST",
     headers: {
+      ...ATTRIBUTION_HEADERS,
       Authorization: `Bearer ${settings.apiKey}`,
       "Content-Type": "application/json",
-      "X-Title": "TextAloud",
     },
     body: JSON.stringify(body),
     signal,
@@ -733,7 +760,7 @@ async function getCredits() {
   if (!apiKey) return { ok: false, error: "no-key" };
   try {
     const res = await fetch(CREDITS_URL, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+      headers: { ...ATTRIBUTION_HEADERS, Authorization: `Bearer ${apiKey}` },
     });
     if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
     const json = await res.json();
