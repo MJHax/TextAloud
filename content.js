@@ -28,6 +28,7 @@
   let state = "idle";
   let estimateToken = 0;
   let userPositioned = false;
+  let savedPos = null;
   let dragState = null;
 
   /* ---------------------------------------------------------------- */
@@ -36,6 +37,7 @@
 
   async function boot() {
     await loadState();
+    await loadBubblePos();
     buildUI();
 
     document.addEventListener("mouseup", onMouseUp, true);
@@ -52,7 +54,30 @@
     for (const key of ["showEstimate", "showButton"]) {
       if (changes[key]) settings[key] = changes[key].newValue;
     }
+    if (changes.bubblePos) {
+      const value = changes.bubblePos.newValue;
+      if (value && typeof value.x === "number" && typeof value.y === "number") {
+        savedPos = value;
+        userPositioned = true;
+      } else {
+        savedPos = null;
+        userPositioned = false;
+      }
+      if (host?.__wrap?.classList.contains("visible")) positionBubble();
+    }
     if (settings.showButton === false) hideBubble();
+  }
+
+  async function loadBubblePos() {
+    try {
+      const { bubblePos } = await chrome.storage.local.get("bubblePos");
+      if (bubblePos && typeof bubblePos.x === "number" && typeof bubblePos.y === "number") {
+        savedPos = bubblePos;
+        userPositioned = true;
+      }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   async function loadState() {
@@ -184,6 +209,7 @@
 
     regrantBtn.addEventListener("click", onRegrantClick);
     bubble.addEventListener("mousedown", onBubbleMouseDown);
+    bubble.addEventListener("dblclick", onBubbleDoubleClick);
     readBtn.addEventListener("mousedown", (e) => e.preventDefault());
     readBtn.addEventListener("click", onReadClick);
     pauseBtn.addEventListener("click", onPauseClick);
@@ -275,25 +301,52 @@
 
   function positionBubble() {
     if (!lastRect || !host.__wrap) return;
-    if (userPositioned) return;
     const wrap = host.__wrap;
     const pad = 8;
     const bw = bubble.offsetWidth || 200;
     const bh = bubble.offsetHeight || 90;
 
-    let left = lastRect.left + lastRect.width / 2 - bw / 2;
-    left = Math.max(pad, Math.min(left, window.innerWidth - bw - pad));
-
+    let left;
     let top;
-    if (lastRect.top - bh - 10 >= pad) {
-      top = lastRect.top - bh - 10;
+    if (userPositioned && savedPos) {
+      const maxX = Math.max(0, window.innerWidth - bw);
+      const maxY = Math.max(0, window.innerHeight - bh);
+      left = savedPos.x * maxX;
+      top = savedPos.y * maxY;
     } else {
-      top = Math.min(lastRect.bottom + 10, window.innerHeight - bh - pad);
+      left = lastRect.left + lastRect.width / 2 - bw / 2;
+      if (lastRect.top - bh - 10 >= pad) {
+        top = lastRect.top - bh - 10;
+      } else {
+        top = Math.min(lastRect.bottom + 10, window.innerHeight - bh - pad);
+      }
     }
-    top = Math.max(pad, top);
+
+    left = Math.max(pad, Math.min(left, window.innerWidth - bw - pad));
+    top = Math.max(pad, Math.min(top, window.innerHeight - bh - pad));
 
     wrap.style.left = `${Math.round(left)}px`;
     wrap.style.top = `${Math.round(top)}px`;
+  }
+
+  function persistBubblePos() {
+    try {
+      chrome.storage.local.set({ bubblePos: savedPos });
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function onBubbleDoubleClick(event) {
+    if (event.target.closest("button, a, input, select, textarea")) return;
+    savedPos = null;
+    userPositioned = false;
+    try {
+      chrome.storage.local.set({ bubblePos: null });
+    } catch (_) {
+      /* ignore */
+    }
+    positionBubble();
   }
 
   function onBubbleMouseDown(event) {
@@ -323,6 +376,9 @@
     wrap.style.left = `${Math.round(left)}px`;
     wrap.style.top = `${Math.round(top)}px`;
     userPositioned = true;
+    const maxX = Math.max(1, window.innerWidth - bw);
+    const maxY = Math.max(1, window.innerHeight - bh);
+    savedPos = { x: left / maxX, y: top / maxY };
     event.preventDefault();
   }
 
@@ -331,6 +387,7 @@
     host.__wrap.classList.remove("dragging");
     window.removeEventListener("mousemove", onDragMove, true);
     window.removeEventListener("mouseup", onDragEnd, true);
+    persistBubblePos();
   }
 
   function showBubble(rect) {
@@ -372,8 +429,6 @@
         return;
       }
       if (!rect || (!rect.width && !rect.height)) return;
-
-      userPositioned = false;
 
       if (text.length > MAX_CHARS) {
         selectionText = "";

@@ -19,7 +19,9 @@ click**. Chrome extension, Manifest V3.
   `🔊 Read aloud` and `≈ $0.0021 · 412 chars`.
 - Click **Read aloud**. Playback controls (pause / stop) replace the button while
   it plays; while audio is still generating the **✕** button cancels the request.
-- **Drag the bubble** anywhere on it that isn’t a button to reposition it.
+- **Drag the bubble** anywhere on it that isn’t a button to reposition it. The
+  position is remembered across selections, tabs, and pages; **double-click** the
+  card to reset it back to following your selection.
 - You can also **right-click** a selection → **Read aloud with TextAloud**.
 - Turn on **Save generated audio files** in the popup to write each clip to a
   folder you choose. Folder selection happens on a dedicated options tab (popups
