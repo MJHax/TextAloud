@@ -114,7 +114,11 @@ async function save(b64, kind, filename) {
   try {
     const dir = await self.TextAloudFiles.getDir();
     if (!dir) {
-      return { ok: false, error: "No save folder selected — choose one in the popup." };
+      return {
+        ok: false,
+        code: "no-folder",
+        error: "No save folder selected — choose one in the options page.",
+      };
     }
 
     if (dir.queryPermission) {
@@ -122,7 +126,8 @@ async function save(b64, kind, filename) {
       if (perm !== "granted") {
         return {
           ok: false,
-          error: "Save folder permission was lost — re-select it in the popup.",
+          code: "permission",
+          error: "Folder access needs re-confirming.",
         };
       }
     }
@@ -137,7 +142,8 @@ async function save(b64, kind, filename) {
     await writable.close();
     return { ok: true, name: filename };
   } catch (e) {
-    return { ok: false, error: e?.message || "Save failed." };
+    const code = e?.name === "NotAllowedError" ? "permission" : "error";
+    return { ok: false, code, error: e?.message || "Save failed." };
   }
 }
 

@@ -18,12 +18,15 @@ click**. Chrome extension, Manifest V3.
 - **Highlight text** on any page. A small bubble appears with:
   `🔊 Read aloud` and `≈ $0.0021 · 412 chars`.
 - Click **Read aloud**. Playback controls (pause / stop) replace the button while
-  it plays.
+  it plays; while audio is still generating the **✕** button cancels the request.
+- **Drag the bubble** anywhere on it that isn’t a button to reposition it.
 - You can also **right-click** a selection → **Read aloud with TextAloud**.
 - Turn on **Save generated audio files** in the popup to write each clip to a
-  folder you choose. A native folder picker opens once; after that, every
-  generated clip is saved there as `textaloud-<timestamp>.mp3` (or `.wav` for
-  PCM-only models). The bubble confirms each save.
+  folder you choose. Folder selection happens on a dedicated options tab (popups
+  close when a native dialog opens). After that, every generated clip is saved
+  there as `textaloud-<timestamp>.mp3` (or `.wav` for PCM-only models). The
+  bubble confirms each save; if Chrome needs folder access re-confirmed, a
+  **Re-grant folder access** button appears.
 - After each request the real cost is fetched from OpenRouter and used to
   calibrate future estimates for that model.
 

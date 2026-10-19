@@ -15,8 +15,26 @@ function toast(text, isError) {
 
 async function render() {
   const dir = self.TextAloudFiles ? await self.TextAloudFiles.getDir() : null;
-  $("folder").textContent = dir ? `📁 ${dir.name}` : "No folder selected";
   $("forget").hidden = !dir;
+
+  if (!dir) {
+    $("folder").textContent = "No folder selected";
+    $("choose").textContent = "Choose folder…";
+    return;
+  }
+
+  let perm = "granted";
+  if (dir.queryPermission) perm = await dir.queryPermission({ mode: "readwrite" });
+
+  if (perm === "granted") {
+    await chrome.storage.local.set({ folderPermissionNeeded: false });
+    $("folder").textContent = `📁 ${dir.name}`;
+    $("choose").textContent = "Change folder…";
+  } else {
+    await chrome.storage.local.set({ folderPermissionNeeded: true });
+    $("folder").textContent = `⚠ ${dir.name} — access needs re-confirming`;
+    $("choose").textContent = "Re-grant access";
+  }
 }
 
 function chooseFolder() {
@@ -29,7 +47,11 @@ function chooseFolder() {
     .showDirectoryPicker({ id: "textaloud-audio", mode: "readwrite" })
     .then(async (handle) => {
       await self.TextAloudFiles.setDir(handle);
-      await chrome.storage.local.set({ saveAudio: true, saveFolderName: handle.name });
+      await chrome.storage.local.set({
+        saveAudio: true,
+        saveFolderName: handle.name,
+        folderPermissionNeeded: false,
+      });
       await render();
       const perm = handle.queryPermission
         ? await handle.queryPermission({ mode: "readwrite" })

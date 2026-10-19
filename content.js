@@ -18,6 +18,7 @@
   let bubble = null;
   let estimateEl = null;
   let toastEl = null;
+  let regrantBtn = null;
   let readBtn = null;
   let pauseBtn = null;
   let stopBtn = null;
@@ -26,6 +27,8 @@
   let lastRect = null;
   let state = "idle";
   let estimateToken = 0;
+  let userPositioned = false;
+  let dragState = null;
 
   /* ---------------------------------------------------------------- */
   /* Boot                                                              */
@@ -149,6 +152,10 @@
       }
       .toast { font-size: 11.5px; color: #86efac; }
       .toast.error { color: #fca5a5; }
+      .bubble { cursor: grab; }
+      .wrap.dragging .bubble { cursor: grabbing; }
+      .wrap.dragging { user-select: none; }
+      .regrant { align-self: flex-start; font-size: 11.5px; padding: 6px 9px; }
     `;
     shadow.appendChild(style);
 
@@ -165,6 +172,7 @@
       </div>
       <div class="meta"></div>
       <div class="toast" hidden></div>
+      <button class="regrant ghost" hidden>🔑 Re-grant folder access</button>
     `;
 
     readBtn = bubble.querySelector(".read");
@@ -172,7 +180,10 @@
     stopBtn = bubble.querySelector(".stop");
     estimateEl = bubble.querySelector(".meta");
     toastEl = bubble.querySelector(".toast");
+    regrantBtn = bubble.querySelector(".regrant");
 
+    regrantBtn.addEventListener("click", onRegrantClick);
+    bubble.addEventListener("mousedown", onBubbleMouseDown);
     readBtn.addEventListener("mousedown", (e) => e.preventDefault());
     readBtn.addEventListener("click", onReadClick);
     pauseBtn.addEventListener("click", onPauseClick);
@@ -195,11 +206,13 @@
 
     readBtn.hidden = next !== "idle" && next !== "error";
     pauseBtn.hidden = !(next === "playing" || next === "paused");
-    stopBtn.hidden = !(next === "playing" || next === "paused");
+    stopBtn.hidden = next === "idle" || next === "error";
 
     readBtn.disabled = next === "loading";
     readBtn.textContent = next === "error" ? "↻ Try again" : "🔊 Read aloud";
     pauseBtn.textContent = next === "paused" ? "▶" : "⏸";
+    stopBtn.textContent = next === "loading" ? "✕" : "⏹";
+    stopBtn.title = next === "loading" ? "Cancel" : "Stop";
 
     renderMeta();
   }
@@ -241,6 +254,17 @@
     requestAnimationFrame(positionBubble);
   }
 
+  function onRegrantClick() {
+    send({ type: "openOptions" });
+    regrantBtn.hidden = true;
+  }
+
+  function showPermissionPrompt(text) {
+    showToast(text, true);
+    if (regrantBtn) regrantBtn.hidden = false;
+    requestAnimationFrame(positionBubble);
+  }
+
   function fmtCost(cost) {
     if (typeof cost !== "number" || !isFinite(cost)) return "$?";
     if (cost === 0) return "$0.00";
@@ -251,6 +275,7 @@
 
   function positionBubble() {
     if (!lastRect || !host.__wrap) return;
+    if (userPositioned) return;
     const wrap = host.__wrap;
     const pad = 8;
     const bw = bubble.offsetWidth || 200;
@@ -269,6 +294,43 @@
 
     wrap.style.left = `${Math.round(left)}px`;
     wrap.style.top = `${Math.round(top)}px`;
+  }
+
+  function onBubbleMouseDown(event) {
+    if (event.button !== 0) return;
+    if (event.target.closest("button, a, input, select, textarea")) return;
+    const wrap = host.__wrap;
+    const rect = wrap.getBoundingClientRect();
+    dragState = {
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    };
+    wrap.classList.add("dragging");
+    window.addEventListener("mousemove", onDragMove, true);
+    window.addEventListener("mouseup", onDragEnd, true);
+    event.preventDefault();
+  }
+
+  function onDragMove(event) {
+    if (!dragState) return;
+    const wrap = host.__wrap;
+    const bw = bubble.offsetWidth;
+    const bh = bubble.offsetHeight;
+    let left = event.clientX - dragState.offsetX;
+    let top = event.clientY - dragState.offsetY;
+    left = Math.max(4, Math.min(left, window.innerWidth - bw - 4));
+    top = Math.max(4, Math.min(top, window.innerHeight - bh - 4));
+    wrap.style.left = `${Math.round(left)}px`;
+    wrap.style.top = `${Math.round(top)}px`;
+    userPositioned = true;
+    event.preventDefault();
+  }
+
+  function onDragEnd() {
+    dragState = null;
+    host.__wrap.classList.remove("dragging");
+    window.removeEventListener("mousemove", onDragMove, true);
+    window.removeEventListener("mouseup", onDragEnd, true);
   }
 
   function showBubble(rect) {
@@ -310,6 +372,8 @@
         return;
       }
       if (!rect || (!rect.width && !rect.height)) return;
+
+      userPositioned = false;
 
       if (text.length > MAX_CHARS) {
         selectionText = "";
@@ -391,6 +455,7 @@
     if (msg.type === "saveStatus") {
       if (settings.showButton === false) return;
       if (msg.ok) showToast(`💾 Saved ${msg.name}`);
+      else if (msg.needsPermission) showPermissionPrompt("⚠ Folder access needs re-confirming");
       else showToast(`⚠ ${msg.error}`, true);
       return;
     }

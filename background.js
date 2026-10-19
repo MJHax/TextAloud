@@ -363,7 +363,7 @@ async function setSpeedUnsupported(modelId) {
   await chrome.storage.local.set({ speedUnsupported });
 }
 
-async function requestSpeech(settings, text, format, useSpeed = true) {
+async function requestSpeech(settings, text, format, useSpeed = true, signal) {
   const body = { model: settings.model, input: text, response_format: format };
   if (settings.voice) body.voice = settings.voice;
   if (settings.instructions) body.instructions = settings.instructions;
@@ -377,6 +377,7 @@ async function requestSpeech(settings, text, format, useSpeed = true) {
       "X-Title": "TextAloud",
     },
     body: JSON.stringify(body),
+    signal,
   });
 
   if (!res.ok) {
@@ -430,7 +431,8 @@ async function speak(text, tabId, opts = {}) {
   const modelId = settings.model;
   const key = cacheKey(settings, text);
   const fromCache = audioCache.has(key);
-  current = { key, tabId, startedAt: Date.now() };
+  const controller = new AbortController();
+  current = { key, tabId, startedAt: Date.now(), controller };
   notify(tabId, { type: "playbackState", state: "loading" });
 
   try {
@@ -442,20 +444,20 @@ async function speak(text, tabId, opts = {}) {
       let useSpeed = wantsSpeed && !(await isSpeedUnsupported(modelId));
       let format = pref || "mp3";
 
-      let result = await requestSpeech(settings, text, format, useSpeed);
+      let result = await requestSpeech(settings, text, format, useSpeed, controller.signal);
 
       // Some TTS models (e.g. Gemini) reject mp3 and only return raw PCM.
       // Try once with pcm, then remember the working format for this model.
       if (!result.ok && !pref && looksLikeFormatError(result)) {
         format = "pcm";
-        result = await requestSpeech(settings, text, format, useSpeed);
+        result = await requestSpeech(settings, text, format, useSpeed, controller.signal);
       }
 
       // Some models reject a non-default speed. Retry without it and remember.
       if (!result.ok && useSpeed && looksLikeSpeedError(result)) {
         useSpeed = false;
         await setSpeedUnsupported(modelId);
-        result = await requestSpeech(settings, text, format, false);
+        result = await requestSpeech(settings, text, format, false, controller.signal);
       }
 
       if (!result.ok) throw new Error(result.message);
@@ -490,11 +492,30 @@ async function speak(text, tabId, opts = {}) {
 
     return { ok: true, cached: fromCache };
   } catch (err) {
+    if (err?.name === "AbortError") {
+      notify(tabId, { type: "playbackState", state: "stopped" });
+      return { ok: false, error: "cancelled" };
+    }
     const message = err?.message || String(err);
     current = null;
     notify(tabId, { type: "playbackState", state: "error", error: message });
     return { ok: false, error: message };
   }
+}
+
+function cancelCurrent() {
+  if (current?.controller) {
+    try {
+      current.controller.abort();
+    } catch (_) {
+      /* ignore */
+    }
+  }
+  if (current?.tabId != null) {
+    notify(current.tabId, { type: "playbackState", state: "stopped" });
+  }
+  current = null;
+  control("stop");
 }
 
 async function control(action) {
@@ -588,12 +609,16 @@ async function saveAudioFile(entry, tabId) {
     });
     if (res?.ok) {
       entry.saved = true;
+      chrome.storage.local.set({ folderPermissionNeeded: false });
       notify(tabId, { type: "saveStatus", ok: true, name: res.name || filename });
     } else {
+      const needsPermission = res?.code === "permission";
+      if (needsPermission) chrome.storage.local.set({ folderPermissionNeeded: true });
       notify(tabId, {
         type: "saveStatus",
         ok: false,
         error: res?.error || "Save failed.",
+        needsPermission,
       });
     }
   } catch (e) {
@@ -660,7 +685,13 @@ async function handleMessage(msg, sender) {
     }
 
     case "control": {
-      await control(msg.action);
+      if (msg.action === "stop") cancelCurrent();
+      else await control(msg.action);
+      return { ok: true };
+    }
+
+    case "openOptions": {
+      chrome.runtime.openOptionsPage();
       return { ok: true };
     }
 

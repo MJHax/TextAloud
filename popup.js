@@ -288,8 +288,16 @@ async function onPreview() {
 async function renderSaveFolder() {
   const files = self.TextAloudFiles;
   const dir = files ? await files.getDir() : null;
-  $("saveFolderRow").hidden = !settings.saveAudio;
-  $("saveFolderName").textContent = dir ? `📁 ${dir.name}` : "No folder selected yet";
+  const { folderPermissionNeeded = false } = await chrome.storage.local.get(
+    "folderPermissionNeeded"
+  );
+  $("saveFolderRow").hidden = !settings.saveAudio && !folderPermissionNeeded;
+  $("saveFolderName").textContent = folderPermissionNeeded
+    ? "⚠ Folder access needs re-confirming"
+    : dir
+    ? `📁 ${dir.name}`
+    : "No folder selected yet";
+  $("chooseFolder").textContent = folderPermissionNeeded ? "Re-grant" : "Choose…";
   $("forgetFolder").hidden = !dir;
 }
 
