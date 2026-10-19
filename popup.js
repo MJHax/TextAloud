@@ -295,6 +295,9 @@ async function renderSaveFolder() {
     const perm = await dir.queryPermission({ mode: "readwrite" });
     needed = perm !== "granted";
     await chrome.storage.local.set({ folderPermissionNeeded: needed });
+  } else if (!dir) {
+    needed = false;
+    await chrome.storage.local.set({ folderPermissionNeeded: false });
   }
   $("saveFolderRow").hidden = !settings.saveAudio && !needed;
   $("saveFolderName").textContent = needed

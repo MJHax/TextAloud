@@ -65,6 +65,15 @@
       }
       if (host?.__wrap?.classList.contains("visible")) positionBubble();
     }
+    if (changes.saveAudio || changes.folderPermissionNeeded) {
+      if (changes.saveAudio) settings.saveAudio = changes.saveAudio.newValue;
+      const needed = changes.folderPermissionNeeded
+        ? changes.folderPermissionNeeded.newValue
+        : undefined;
+      if (settings.saveAudio === false || needed === false) {
+        if (regrantBtn) regrantBtn.hidden = true;
+      }
+    }
     if (settings.showButton === false) hideBubble();
   }
 
@@ -112,6 +121,7 @@
     const style = document.createElement("style");
     style.textContent = `
       * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
       .wrap {
         position: fixed;
         top: 0; left: 0;
@@ -452,7 +462,7 @@
   async function checkSaveState() {
     const res = await send({ type: "getSaveState" });
     if (!res?.ok) return;
-    if (res.folderPermissionNeeded) {
+    if (res.saveAudio && res.folderPermissionNeeded) {
       const wasHidden = !regrantBtn || regrantBtn.hidden;
       if (regrantBtn) regrantBtn.hidden = false;
       if (wasHidden) showToast("⚠ Folder access needs re-confirming", true);

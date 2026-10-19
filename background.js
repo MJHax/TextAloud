@@ -669,32 +669,30 @@ async function handleMessage(msg, sender) {
 
     case "getSaveState": {
       const settings = await getSettings();
+
+      if (!settings.saveAudio) {
+        return { ok: true, saveAudio: false, folderPermissionNeeded: false };
+      }
+
       let needed = Boolean(
         (await chrome.storage.local.get("folderPermissionNeeded")).folderPermissionNeeded
       );
 
       // Once per browser session, proactively verify the stored folder handle.
-      if (settings.saveAudio) {
-        const session = await chrome.storage.session.get("permChecked");
-        if (!session.permChecked) {
-          await chrome.storage.session.set({ permChecked: true });
-          try {
-            const res = await offscreen({ type: "checkPermission" });
-            if (res && res.code !== "no-folder") {
-              needed = !res.ok;
-              await chrome.storage.local.set({ folderPermissionNeeded: needed });
-            }
-          } catch (_) {
-            /* ignore */
-          }
+      const session = await chrome.storage.session.get("permChecked");
+      if (!session.permChecked) {
+        await chrome.storage.session.set({ permChecked: true });
+        try {
+          const res = await offscreen({ type: "checkPermission" });
+          needed = Boolean(res && res.code !== "no-folder" && !res.ok);
+          await chrome.storage.local.set({ folderPermissionNeeded: needed });
+        } catch (_) {
+          needed = false;
+          await chrome.storage.local.set({ folderPermissionNeeded: false });
         }
       }
 
-      return {
-        ok: true,
-        saveAudio: Boolean(settings.saveAudio),
-        folderPermissionNeeded: needed,
-      };
+      return { ok: true, saveAudio: true, folderPermissionNeeded: needed };
     }
 
     case "estimate": {

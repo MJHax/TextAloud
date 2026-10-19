@@ -21,6 +21,7 @@ async function render() {
   $("forget").hidden = !dir;
 
   if (!dir) {
+    await chrome.storage.local.set({ folderPermissionNeeded: false });
     $("folder").textContent = "No folder selected";
     $("choose").textContent = "Choose folder…";
     $("regrant").hidden = true;
