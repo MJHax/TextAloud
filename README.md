@@ -27,8 +27,11 @@ click**. Chrome extension, Manifest V3.
   folder you choose. Folder selection happens on a dedicated options tab (popups
   close when a native dialog opens). After that, every generated clip is saved
   there as `textaloud-<timestamp>.mp3` (or `.wav` for PCM-only models). The
-  bubble confirms each save; if Chrome needs folder access re-confirmed, a
-  **Re-grant folder access** button appears.
+  bubble confirms each save. Folder access is verified proactively each browser
+  session; if Chrome needs it re-confirmed, a **Re-grant folder access** button
+  appears (in the bubble, popup, and options tab). Re-granting is a single click
+  that re-authorizes the existing folder without re-picking it — browsers forbid
+  doing that silently, so a user gesture is always required.
 - After each request the real cost is fetched from OpenRouter and used to
   calibrate future estimates for that model.
 

@@ -13,13 +13,17 @@ function toast(text, isError) {
   }
 }
 
+let currentDir = null;
+
 async function render() {
   const dir = self.TextAloudFiles ? await self.TextAloudFiles.getDir() : null;
+  currentDir = dir;
   $("forget").hidden = !dir;
 
   if (!dir) {
     $("folder").textContent = "No folder selected";
     $("choose").textContent = "Choose folder…";
+    $("regrant").hidden = true;
     return;
   }
 
@@ -30,11 +34,31 @@ async function render() {
     await chrome.storage.local.set({ folderPermissionNeeded: false });
     $("folder").textContent = `📁 ${dir.name}`;
     $("choose").textContent = "Change folder…";
+    $("regrant").hidden = true;
   } else {
     await chrome.storage.local.set({ folderPermissionNeeded: true });
     $("folder").textContent = `⚠ ${dir.name} — access needs re-confirming`;
-    $("choose").textContent = "Re-grant access";
+    $("choose").textContent = "Choose another folder…";
+    $("regrant").hidden = false;
   }
+}
+
+function regrant() {
+  const dir = currentDir;
+  if (!dir || !dir.requestPermission) return;
+  // requestPermission() requires a user gesture — this click supplies it.
+  dir
+    .requestPermission({ mode: "readwrite" })
+    .then(async (perm) => {
+      if (perm === "granted") {
+        await chrome.storage.local.set({ saveAudio: true, folderPermissionNeeded: false });
+        await render();
+        toast(`Access re-granted to “${dir.name}”.`);
+      } else {
+        toast("Access denied. Choose a different folder if needed.", true);
+      }
+    })
+    .catch((e) => toast(e?.message || "Couldn’t re-grant access.", true));
 }
 
 function chooseFolder() {
@@ -75,5 +99,6 @@ async function forgetFolder() {
 }
 
 $("choose").addEventListener("click", chooseFolder);
+$("regrant").addEventListener("click", regrant);
 $("forget").addEventListener("click", forgetFolder);
 render();

@@ -445,7 +445,21 @@
       renderMeta();
       showBubble(rect);
       requestEstimate(text);
+      checkSaveState();
     }, 0);
+  }
+
+  async function checkSaveState() {
+    const res = await send({ type: "getSaveState" });
+    if (!res?.ok) return;
+    if (res.folderPermissionNeeded) {
+      const wasHidden = !regrantBtn || regrantBtn.hidden;
+      if (regrantBtn) regrantBtn.hidden = false;
+      if (wasHidden) showToast("⚠ Folder access needs re-confirming", true);
+      requestAnimationFrame(positionBubble);
+    } else if (regrantBtn) {
+      regrantBtn.hidden = true;
+    }
   }
 
   async function requestEstimate(text) {

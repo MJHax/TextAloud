@@ -147,6 +147,14 @@ async function save(b64, kind, filename) {
   }
 }
 
+async function checkPermission() {
+  const dir = await self.TextAloudFiles.getDir();
+  if (!dir) return { ok: false, code: "no-folder" };
+  let perm = "granted";
+  if (dir.queryPermission) perm = await dir.queryPermission({ mode: "readwrite" });
+  return { ok: perm === "granted", code: perm === "granted" ? null : "permission" };
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || msg.target !== "offscreen") return;
   if (msg.type === "play") {
@@ -157,6 +165,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ ok: true });
   } else if (msg.type === "save") {
     save(msg.b64, msg.kind, msg.filename).then(sendResponse);
+    return true;
+  } else if (msg.type === "checkPermission") {
+    checkPermission().then(sendResponse);
     return true;
   } else if (msg.type === "ping") {
     sendResponse({ ok: true });
