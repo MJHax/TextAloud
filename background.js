@@ -53,7 +53,7 @@ async function setSettings(partial) {
     if (k in DEFAULTS) clean[k] = v;
   }
   if (typeof clean.speed === "number") {
-    clean.speed = Math.min(2, Math.max(0.5, clean.speed));
+    clean.speed = Math.min(5, Math.max(0.25, clean.speed));
   }
   await chrome.storage.local.set(clean);
 }
@@ -319,15 +319,33 @@ async function setFormatPref(modelId, format) {
 function looksLikeFormatError(result) {
   return (
     (result.status === 400 || result.status === 422) &&
-    /mp3|pcm|format|response_format|audio/i.test(result.message || "")
+    /mp3|pcm|response_format|format/i.test(result.message || "")
   );
 }
 
-async function requestSpeech(settings, text, format) {
+function looksLikeSpeedError(result) {
+  return (
+    (result.status === 400 || result.status === 422) &&
+    /speed/i.test(result.message || "")
+  );
+}
+
+async function isSpeedUnsupported(modelId) {
+  const { speedUnsupported = {} } = await chrome.storage.local.get("speedUnsupported");
+  return Boolean(speedUnsupported[modelId]);
+}
+
+async function setSpeedUnsupported(modelId) {
+  const { speedUnsupported = {} } = await chrome.storage.local.get("speedUnsupported");
+  speedUnsupported[modelId] = true;
+  await chrome.storage.local.set({ speedUnsupported });
+}
+
+async function requestSpeech(settings, text, format, useSpeed = true) {
   const body = { model: settings.model, input: text, response_format: format };
   if (settings.voice) body.voice = settings.voice;
   if (settings.instructions) body.instructions = settings.instructions;
-  if (settings.speed && settings.speed !== 1) body.speed = settings.speed;
+  if (useSpeed && settings.speed && settings.speed !== 1) body.speed = settings.speed;
 
   const res = await fetch(SPEECH_URL, {
     method: "POST",
@@ -398,14 +416,24 @@ async function speak(text, tabId, opts = {}) {
 
     if (!entry) {
       const pref = await getFormatPref(modelId);
+      const wantsSpeed = settings.speed && settings.speed !== 1;
+      let useSpeed = wantsSpeed && !(await isSpeedUnsupported(modelId));
       let format = pref || "mp3";
-      let result = await requestSpeech(settings, text, format);
+
+      let result = await requestSpeech(settings, text, format, useSpeed);
 
       // Some TTS models (e.g. Gemini) reject mp3 and only return raw PCM.
       // Try once with pcm, then remember the working format for this model.
       if (!result.ok && !pref && looksLikeFormatError(result)) {
         format = "pcm";
-        result = await requestSpeech(settings, text, format);
+        result = await requestSpeech(settings, text, format, useSpeed);
+      }
+
+      // Some models reject a non-default speed. Retry without it and remember.
+      if (!result.ok && useSpeed && looksLikeSpeedError(result)) {
+        useSpeed = false;
+        await setSpeedUnsupported(modelId);
+        result = await requestSpeech(settings, text, format, false);
       }
 
       if (!result.ok) throw new Error(result.message);

@@ -63,7 +63,12 @@ player wraps PCM in a WAV container so it plays through a normal `<audio>`).
 ## Notes & limitations
 
 - Selections are limited to **3000 characters** per read (safe across providers).
+- Speed is adjustable from **0.25× to 5×**. Models that don’t support custom
+  speed are detected automatically: the request is retried without it and the
+  model is remembered as speed-less.
 - Content scripts run in the top frame only (not inside iframes).
+- Generated audio is **never written to disk** — it lives in an in-memory cache
+  (max 25 clips) and a transient Blob during playback.
 - The audio cache is in-memory and lasts while the service worker is alive.
 - Your API key is stored in `chrome.storage.local` and only ever sent to
   `openrouter.ai`.
