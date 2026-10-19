@@ -1,13 +1,8 @@
 # Changelog
 
-## Unreleased
-
-- Send OpenRouter app attribution headers so usage is credited to TextAloud.
-- Add NOTICE covering name and branding, and SPDX license headers.
-
 ## 1.0.0
 
-First release.
+First release, as "TextAloud: Read Aloud with AI Voices".
 
 - Highlight text on any page and read it aloud with OpenRouter TTS models.
 - Live model + voice picker (voices load per model, from the OpenRouter API).
@@ -21,3 +16,5 @@ First release.
 - Optional right-click “Read aloud with TextAloud” menu item.
 - Delivery instructions and speed (0.25×–5×).
 - API key stored locally only; no accounts, servers, or tracking.
+- OpenRouter app attribution headers, so usage is credited to TextAloud.
+- Licensed GPL-3.0-or-later; NOTICE covers the name and branding.

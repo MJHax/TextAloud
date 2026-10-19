@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "TextAloud — OpenRouter TTS",
+  "name": "TextAloud: Read Aloud with AI Voices",
   "version": "1.0.0",
   "description": "Highlight text on any page and read it aloud using OpenRouter text-to-speech models, with a live price estimate.",
   "minimum_chrome_version": "116",

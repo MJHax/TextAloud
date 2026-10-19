@@ -5,7 +5,7 @@ you're only using the extension yourself.
 
 ## Basics
 
-- **Name:** TextAloud — OpenRouter TTS
+- **Name:** TextAloud: Read Aloud with AI Voices
 - **Category:** Accessibility (alternatively: Productivity)
 - **Language:** English
 - **Homepage / support URL:** your GitHub repo
