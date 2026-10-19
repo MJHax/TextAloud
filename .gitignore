@@ -1,0 +1,17 @@
+# Build output
+dist/
+*.zip
+*.crx
+*.pem
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Secrets — never commit these
+.env
+*.key
+auth.json

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>TextAloud</title>
+  </head>
+  <body>
+    <header>
+      <img src="icons/icon48.png" alt="" width="32" height="32" />
+      <div>
+        <h1>TextAloud</h1>
+        <p class="sub">Text-to-speech via OpenRouter</p>
+      </div>
+    </header>
+
+    <section id="setup" hidden>
+      <p class="lead">Add your OpenRouter API key to get started.</p>
+      <label class="field">
+        <span>API key</span>
+        <input id="apiKey" type="password" spellcheck="false"
+               placeholder="sk-or-v1-…" autocomplete="off" />
+      </label>
+      <button id="saveKey" class="primary">Save &amp; connect</button>
+      <p class="hint">
+        <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">
+          Create an API key →
+        </a>
+      </p>
+      <p class="fine">Stored locally in this browser only. Never sent anywhere except OpenRouter.</p>
+    </section>
+
+    <section id="main" hidden>
+      <div class="credits" id="credits">Checking credits…</div>
+
+      <label class="field">
+        <span>Model</span>
+        <select id="model"></select>
+      </label>
+      <div class="price" id="priceInfo"></div>
+
+      <label class="field">
+        <span>Voice</span>
+        <select id="voiceSelect"></select>
+        <input id="voice" list="voiceList" spellcheck="false" placeholder="Custom voice name" hidden />
+        <datalist id="voiceList"></datalist>
+        <p class="field-note" id="voiceNote"></p>
+      </label>
+
+      <label class="field">
+        <span>Delivery instructions <em>(optional)</em></span>
+        <textarea id="instructions" rows="2" placeholder="e.g. warm, slow, and calm"></textarea>
+      </label>
+
+      <label class="field row">
+        <span>Speed</span>
+        <div class="range-wrap">
+          <input id="speed" type="range" min="0.5" max="2" step="0.05" />
+          <output id="speedVal">1.00×</output>
+        </div>
+      </label>
+
+      <div class="toggles">
+        <label><input type="checkbox" id="showEstimate" /> Show price estimate on highlight</label>
+        <label><input type="checkbox" id="showButton" /> Show floating button on highlight</label>
+        <label><input type="checkbox" id="contextMenu" /> Add right-click “Read aloud” menu</label>
+      </div>
+
+      <div class="actions">
+        <button id="preview" class="primary">🔊 Test voice</button>
+        <button id="refresh" class="ghost">↻ Models</button>
+      </div>
+
+      <p class="fine">
+        <a href="#" id="changeKey">Change API key</a>
+      </p>
+    </section>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
